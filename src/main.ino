@@ -22,7 +22,7 @@ void loop()
   digitalWrite(LED_BUILTIN, HIGH);
 
   // wait for a second
-  delay(2000);
+  delay(500);
 
   // turn the LED off by making the voltage LOW
   digitalWrite(LED_BUILTIN, LOW);
