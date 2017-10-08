@@ -17,9 +17,9 @@ const int OnBoardLEDPin = 13;
 const int PushButtonPin = 6;
 
 // Declare variables for sleep timer
-int runtimeLength = 1;										// In minutes
-signed long startMillis = 0;         						// store the start time of the sketch
-unsigned long runTimeInMillis = 1000 * 60 * runtimeLength;	// how long to run before going to sleep
+int runtimeLength = 5;										// In minutes
+signed long startSeconds = 0;         						// store the start time of the sketch
+unsigned long runTimeInSeconds = runtimeLength * 60; 			// how long to run before going to sleep
 bool isRunning = false;
 
 // #######################################
@@ -61,22 +61,21 @@ void setup() {
 void loop() {
 
 	// First check to see if the button was pressed
-	signed long currentMillis = millis();
+	unsigned long currentSeconds = millis()/1000;
 
 	if (digitalRead(PushButtonPin) == LOW && (isRunning == true))
 	{
 		delay(1000);
-		Blink(5, 100, OnBoardLEDPin);
 		isRunning = false;
-		startMillis = -2147483648L;
+		startSeconds = -2147483648L;
 	}
 	else if (digitalRead(PushButtonPin) == LOW && (isRunning == false))
 	{
 		delay(1000);
 		isRunning = true;
-		startMillis = currentMillis;
+		startSeconds = currentSeconds;
 	}
-	else if (currentMillis - startMillis < runTimeInMillis)
+	else if (currentSeconds - startSeconds < runTimeInSeconds)
 	{
 		isRunning = true;
 
@@ -84,7 +83,7 @@ void loop() {
 	else
 	{
 		isRunning = false;
-		startMillis = -2147483648L;
+		startSeconds = -2147483648L;
 	}
 
 
