@@ -4,6 +4,10 @@
  Author:	Robin Thomas
 */
 
+//#include "Arduino.h"
+#include <Adafruit_NeoPixel.h>
+#include <NeoPixelPainter.h>
+
 // Define inputs
 const int LeftHandPotPin = 0;			// Analog input pin
 const int RightHandPotPin = 1;			// Analog input pin
@@ -13,9 +17,10 @@ const int OnBoardLEDPin = 13;
 const int PushButtonPin = 6;
 
 // Declare variables for sleep timer
-int runtimeLength = 10;										// In minutes
-unsigned long startMillis = 0;         						// store the start time of the sketch
+int runtimeLength = 1;										// In minutes
+signed long startMillis = 0;         						// store the start time of the sketch
 unsigned long runTimeInMillis = 1000 * 60 * runtimeLength;	// how long to run before going to sleep
+bool isRunning = false;
 
 // #######################################
 // 		Setup NeoPixels
@@ -31,27 +36,21 @@ unsigned long runTimeInMillis = 1000 * 60 * runtimeLength;	// how long to run be
 const int NeoPixelPin = 8;
 const int NeoPixelCount = 12;
 
-//#include "Arduino.h"
-#include <Adafruit_NeoPixel.h>
-#include <NeoPixelPainter.h>
-
 Adafruit_NeoPixel neoPixelStrip = Adafruit_NeoPixel(NeoPixelCount, NeoPixelPin, NEO_GRB + NEO_KHZ800);
 NeoPixelPainterCanvas pixelcanvas = NeoPixelPainterCanvas(&neoPixelStrip); //create canvas, linked to the neopixels (must be created before the brush)
 NeoPixelPainterBrush pixelbrush = NeoPixelPainterBrush(&pixelcanvas); //crete brush, linked to the canvas to paint to
 NeoPixelPainterBrush pixelbrush2 = NeoPixelPainterBrush(&pixelcanvas); 
 bool animationIntialized = false;
 unsigned long loopcounter;			//count the loops, switch to next animation after a while
-const int duration = 500;  //number of loops to run each animation for
+const int duration = 500;  			//number of loops to run each animation for
 
 void setup() {
-	//digitalWrite(OnBoardLEDPin, LOW);
+	digitalWrite(OnBoardLEDPin, LOW);
 
 	//Setup GPIO pins
 	pinMode(OnBoardLEDPin, OUTPUT);
-	pinMode(PushButtonPin, INPUT);
+	pinMode(PushButtonPin, INPUT_PULLUP);
 	
-	//Turn on Push button
-	//digitalWrite(PushButtonPin, LOW);
 	
 	//Initialize NeoPixels
 	pinMode(NeoPixelPin, OUTPUT);
@@ -61,31 +60,37 @@ void setup() {
 // the loop function runs over and over again until power down or reset
 void loop() {
 
-
-
 	// First check to see if the button was pressed
-	unsigned long currentMillis = millis();
+	signed long currentMillis = millis();
 
-	// If button was pressed, reset sleep timer
-	//if (digitalRead(PushButtonPin) == LOW)
-	//{
-	//	startMillis = currentMillis;
-	//}
+	if (digitalRead(PushButtonPin) == LOW && (isRunning == true))
+	{
+		delay(1000);
+		Blink(5, 100, OnBoardLEDPin);
+		isRunning = false;
+		startMillis = -2147483648L;
+	}
+	else if (digitalRead(PushButtonPin) == LOW && (isRunning == false))
+	{
+		delay(1000);
+		isRunning = true;
+		startMillis = currentMillis;
+	}
+	else if (currentMillis - startMillis < runTimeInMillis)
+	{
+		isRunning = true;
 
-	//Time has expired, shut everything down
-	//if (currentMillis - startMillis > runTimeInMillis)
-	//{
-	//	//Turn off all neopixels
-	//	for (int i = 0; i < NeoPixelCount; i++)
-	//	{ 
-	//		neoPixelStrip.setPixelColor(i, 0, 0,0);
-	//	}
-	//	neoPixelStrip.clear();
-	//	animationIntialized == false;
-	//}
-	//else
-	//{
-		// Do Fun Stuff !!
+	}
+	else
+	{
+		isRunning = false;
+		startMillis = -2147483648L;
+	}
+
+
+	if (isRunning == true)
+	{
+		// We're still in the countdown window, so do Fun Stuff !!
 		// Read the voltage from the pots (Range: 0-1023)
 		int britghtnessValue = analogRead(LeftHandPotPin);
 		britghtnessValue = map(britghtnessValue, 1023, 0, 0, 1023);
@@ -102,7 +107,12 @@ void loop() {
 			InitializeNeoPixelPainter(britghtnessValue, animationSpeed);
 		}
 		AnimateNeoPixels();
-	//}
+	}
+	else
+	{
+		TurnOffNeoPixels();
+	}
+	
 }
 
 void InitializeNeoPixelPainter(int brightness, int speed)
@@ -140,4 +150,24 @@ void AnimateNeoPixels()
 	pixelcanvas.transfer(); //transfer the canvas to the neopixels
 
 	neoPixelStrip.show();
+}
+void TurnOffNeoPixels()
+{
+			//Turn off all neopixels
+			for (int i = 0; i < NeoPixelCount; i++)
+			{ 
+				neoPixelStrip.setPixelColor(i, 0, 0,0);
+			}
+			neoPixelStrip.clear();
+			neoPixelStrip.show();
+			animationIntialized == false;
+}
+void Blink(int count, int delayTime, int pin)
+{
+	for (int i=0; i <= count; i++){
+		digitalWrite(pin, HIGH);
+		delay(delayTime);
+		digitalWrite(pin, LOW);
+		delay(delayTime);
+	 } 
 }
